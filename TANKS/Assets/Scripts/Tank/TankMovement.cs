@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using Unity.Netcode;
+using UnityEngine;
 
-public class TankMovement : MonoBehaviour
+public class TankMovement : NetworkBehaviour
 {
     public int m_PlayerNumber = 1;         
     public float m_Speed = 12f;            
@@ -44,6 +45,7 @@ public class TankMovement : MonoBehaviour
     
     private void Update()
     {
+        if (!IsOwner) return;
         // Store the player's input and make sure the audio for the engine is playing.
         m_MovementInputValue = Input.GetAxis(m_MovementAxisName);
         m_TurnInputValue = Input.GetAxis(m_TurnAxisName);
@@ -77,6 +79,7 @@ public class TankMovement : MonoBehaviour
     private void FixedUpdate()
     {
         // Move and turn the tank.
+        if (!IsOwner) return;
         Move();
         Turn();
     }
