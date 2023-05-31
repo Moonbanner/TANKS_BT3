@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
+using Unity.Netcode;
 
-public class ShellExplosion : MonoBehaviour
+public class ShellExplosion : NetworkBehaviour
 {
     public LayerMask m_TankMask;
     public ParticleSystem m_ExplosionParticles;       
@@ -13,12 +14,14 @@ public class ShellExplosion : MonoBehaviour
 
     private void Start()
     {
+        if (!IsOwner) return;
         Destroy(gameObject, m_MaxLifeTime);
     }
 
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsOwner) return;
         // Find all the tanks in an area around the shell and damage them.
         Collider[] colliders = Physics.OverlapSphere(transform.position, m_ExplosionRadius, m_TankMask);
 
