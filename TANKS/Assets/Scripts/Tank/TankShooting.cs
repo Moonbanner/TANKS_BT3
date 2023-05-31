@@ -22,12 +22,14 @@ public class TankShooting : NetworkBehaviour
 
     private void OnEnable()
     {
+        if (!IsOwner) return;
         m_CurrentLaunchForce = m_MinLaunchForce;
         m_AimSlider.value = m_MinLaunchForce;
     }
 
     private void Start()
     {
+        if (!IsOwner) return;
         m_FireButton = "Fire" + m_PlayerNumber;
 
         m_ChargeSpeed = (m_MaxLaunchForce - m_MinLaunchForce) / m_MaxChargeTime;
@@ -44,7 +46,9 @@ public class TankShooting : NetworkBehaviour
             //at max charge, not yet fired
             m_CurrentLaunchForce = m_MaxLaunchForce;
 
-            FireServerRpc();
+            m_Fired = true;
+
+            //FireServerRpc(m_CurrentLaunchForce);      //disabled since it makes multiplayer crashes
         }
         else if (Input.GetButtonDown(m_FireButton))
         {
@@ -55,33 +59,33 @@ public class TankShooting : NetworkBehaviour
             m_ShootingAudio.clip = m_ChargingClip;
             m_ShootingAudio.Play();
         }
-        else if (Input.GetButton(m_FireButton) && !m_Fired)
+        else if (Input.GetButton(m_FireButton))
         {
             //holding the button, not yet fired
             m_CurrentLaunchForce += m_ChargeSpeed * Time.deltaTime;
 
             m_AimSlider.value = m_CurrentLaunchForce;
         }
-        else if (Input.GetButtonUp(m_FireButton) && !m_Fired)
+        else if (Input.GetButtonUp(m_FireButton))
         {
             //we released the button, having not fired yet
-            FireServerRpc();
+            FireServerRpc(m_CurrentLaunchForce);
         }
     }
 
     [ServerRpc]
-    private void FireServerRpc()
+    private void FireServerRpc(float launchForce)
     {
         // Instantiate and launch the shell.
         m_Fired = true;
 
         Rigidbody shellInstance = Instantiate(m_Shell, m_FireTransform.position, m_FireTransform.rotation) as Rigidbody;
-        shellInstance.velocity = m_CurrentLaunchForce * m_FireTransform.forward;
+        shellInstance.velocity = launchForce * m_FireTransform.forward;
         shellInstance.GetComponent<NetworkObject>().Spawn(true);
 
         m_ShootingAudio.clip = m_FireClip;
         m_ShootingAudio.Play();
 
-        m_CurrentLaunchForce = m_MinLaunchForce;
+        launchForce = m_MinLaunchForce;
     }
 }

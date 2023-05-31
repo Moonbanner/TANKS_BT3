@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 
 public class ShellExplosion : NetworkBehaviour
 {
     public LayerMask m_TankMask;
-    public ParticleSystem m_ExplosionParticles;       
-    public AudioSource m_ExplosionAudio;              
+    public GameObject m_ShellExplosion;
+    //public ParticleSystem m_ExplosionParticles;       //changed the Shell as parent - Explosion as child setup so the network can spawn/despawn the explosions
+    //public AudioSource m_ExplosionAudio;              
     public float m_MaxDamage = 100f;                  
     public float m_ExplosionForce = 1000f;            
     public float m_MaxLifeTime = 2f;                  
@@ -14,14 +16,12 @@ public class ShellExplosion : NetworkBehaviour
 
     private void Start()
     {
-        if (!IsOwner) return;
         Destroy(gameObject, m_MaxLifeTime);
     }
 
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsOwner) return;
         // Find all the tanks in an area around the shell and damage them.
         Collider[] colliders = Physics.OverlapSphere(transform.position, m_ExplosionRadius, m_TankMask);
 
@@ -44,16 +44,22 @@ public class ShellExplosion : NetworkBehaviour
             targetHealth.TakeDamage(damage);
         }
 
-        m_ExplosionParticles.transform.parent = null;
+        PlayExplosionParticlesServerRpc();
 
-        m_ExplosionParticles.Play();
-
-        m_ExplosionAudio.Play();
-
-        Destroy(m_ExplosionParticles.gameObject, m_ExplosionParticles.duration);
-        Destroy(gameObject);
     }
 
+    [ServerRpc]
+    private void PlayExplosionParticlesServerRpc()
+    {
+        GameObject shellExplosion = Instantiate(m_ShellExplosion, transform.position, transform.rotation);
+        shellExplosion.GetComponent<NetworkObject>().Spawn();
+
+        //shellExplosion.GetComponent<NetworkObject>().Despawn(); //Editor keeps warning about destroying while object is still spawned if this is kept in
+        Destroy(shellExplosion.gameObject, shellExplosion.GetComponent<ParticleSystem>().main.duration);
+
+        this.gameObject.GetComponent<NetworkObject>().Despawn();
+        Destroy(gameObject);
+    }
 
     private float CalculateDamage(Vector3 targetPosition)
     {
