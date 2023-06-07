@@ -41,7 +41,7 @@ public class ShellExplosion : NetworkBehaviour
 
             float damage = CalculateDamage(targetRigidbody.position);
 
-            targetHealth.TakeDamage(damage);
+            targetHealth.TakeDamageServerRpc(damage);
         }
 
         PlayExplosionParticlesServerRpc();
