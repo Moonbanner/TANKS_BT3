@@ -40,6 +40,10 @@ public class TankMovement : NetworkBehaviour
         m_MovementAxisName = "Vertical" + m_PlayerNumber;
         m_TurnAxisName = "Horizontal" + m_PlayerNumber;
 
+        GameManager gameManager = FindAnyObjectByType<GameManager>();
+        gameManager.m_Tanks[(int)OwnerClientId].m_Instance = this.gameObject;
+        gameManager.SetCameraTargets();
+
         m_OriginalPitch = m_MovementAudio.pitch;
     }
     
